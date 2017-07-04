@@ -18,9 +18,15 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="function.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="opencv_cfg.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="function.h">
       <Filter>源文件</Filter>
     </ClInclude>
   </ItemGroup>
