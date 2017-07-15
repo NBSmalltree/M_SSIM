@@ -74,7 +74,7 @@ Scalar getMSSIM(const Mat& i1, const Mat& i2)
 	return mssim;
 }
 
-double r2l()
+double r2l(Mat& lColor, Mat& rColor, Mat& lDisp, Mat& rDisp)
 {
 
 	printf("\n\n右视点到左视点的映射，CBAl的计算;\n");
@@ -85,11 +85,11 @@ double r2l()
 	compression_params.push_back(9);
 
 	//输入彩色图;
-	Mat lColor = imread("view1.png", 2 | 4);
-	Mat rColor = imread("view5.png", 2 | 4);
+	//Mat lColor = imread("Reindeer_Original_view1.bmp", 2 | 4);
+	//Mat rColor = imread("Reindeer_Original_view2.bmp", 2 | 4);
 	//输入视差图;
-	Mat lDisp = imread("disp1.png", 2 | 4);
-	Mat rDisp = imread("disp5.png", 2 | 4);
+	//Mat lDisp = imread("Reindeer_InterViewConsistency_depth_view1.bmp", 2 | 4);
+	//Mat rDisp = imread("Reindeer_InterViewConsistency_depth_view2.bmp", 2 | 4);
 
 	//申明新灰度图空间;
 	Mat lGray, rGray;
@@ -100,6 +100,16 @@ double r2l()
 	//imshow("原始左视点图;", lColor);
 	//imshow("原始右视点图;", rColor);
 
+	////原始深度图/5;
+	//for (int i = 0; i < lGray.rows; i++) {
+	//	uchar* data1 = lDisp.ptr<uchar>(i);//行指针;
+	//	uchar* data2 = rDisp.ptr<uchar>(i);//行指针;
+	//	for (int j = 0; j < lGray.cols; j++) {
+	//		data1[j] /= 5;
+	//		data2[j] /= 5;
+	//	}
+	//}
+
 	//测试输入视差图(测试通过);
 	//imshow("原始左视差图;", lDisp);
 	//imshow("原始右视差图;", rDisp);
@@ -109,8 +119,8 @@ double r2l()
 	cvtColor(rColor, rGray, CV_RGB2GRAY);
 
 	//测试转换的灰度图(测试通过);
-	//imshow("左视点灰度图;", lGray);
-	//imshow("右视点灰度图;", rGray);
+	imshow("左视点灰度图;", lGray);
+	imshow("右视点灰度图;", rGray);
 
 	imwrite("左视点灰度图.png", lGray, compression_params);
 	imwrite("右视点灰度图.png", rGray, compression_params);
@@ -119,14 +129,14 @@ double r2l()
 	//申明映射的新左视点图空间;
 	Mat rwarpedGray;
 	rwarpedGray.create(lGray.rows, lGray.cols, CV_8UC1);//CV_8UC1
-
-														//z-buffer,打算先保存一个位置掩模;
-														//申明映射的新左视点图位置掩模;
+	
+	//z-buffer,打算先保存一个位置掩模;
+	//申明映射的新左视点图位置掩模;
 	Mat rwarpedLocal, rwarpedLocal_Value;
 	rwarpedLocal.create(lGray.rows, lGray.cols, CV_16UC1);//CV_16UC1
 	rwarpedLocal_Value.create(lGray.rows, lGray.cols, CV_8UC1);//CV_8UC1
 
-															   //init to 0;
+	//init to 0;
 	for (int i = 0; i < lGray.rows; i++) {
 		ushort* data = rwarpedLocal.ptr<ushort>(i);//行指针;
 		for (int j = 0; j < lGray.cols; j++)
@@ -186,7 +196,7 @@ double r2l()
 	imwrite("映射的新左视点图.png", rwarpedGray, compression_params);
 
 	//显示映射的新左视点图;
-	//imshow("映射的新左视点图;", rwarpedGray);
+	imshow("映射的新左视点图;", rwarpedGray);
 
 	//接下来要统计Hl区域;
 	//统计左边的全0区域，则这些全0区域即为Hl;
@@ -196,7 +206,7 @@ double r2l()
 	Mat hlMask;
 	hlMask.create(lGray.rows, lGray.cols, CV_8UC1);//CV_8UC1
 
-												   //init to 0;
+	//init to 0;
 	for (int i = 0; i < lGray.rows; i++) {
 		uchar* data = hlMask.ptr<uchar>(i);//行指针;
 		for (int j = 0; j < lGray.cols; j++)
@@ -223,7 +233,7 @@ double r2l()
 	Mat lDiff;
 	lDiff.create(lGray.rows, lGray.cols, CV_8UC1);//CV_8UC1
 
-												  //init to 0;
+	//init to 0;
 	for (int i = 0; i < lGray.rows; i++) {
 		uchar* data = lDiff.ptr<uchar>(i);//行指针;
 		for (int j = 0; j < lGray.cols; j++)
@@ -244,7 +254,7 @@ double r2l()
 	}
 
 	//显示左视点与右视点映射的左视点差异图;
-	//imshow("左视点与右视点映射的左视点差异图;", lDiff);
+	imshow("左视点与右视点映射的左视点差异图;", lDiff);
 
 	//imwrite("左视点与右视点映射的左视点差异图.png", lDiff, compression_params);
 
@@ -268,7 +278,7 @@ double r2l()
 		uchar* data2 = lDiff.ptr<uchar>(i);
 		uchar* data3 = lThre.ptr<uchar>(i);
 		for (int j = 0; j < lGray.cols; j++) {
-			data3[j] = log(data1[j] * data2[j] + 1) * 5;//此处*5即/0.2;
+			data3[j] = log(data1[j] * data2[j] + 1) / 0.1;//此处*5即/0.2;//////////////////////////////////////////////////////////////////
 		}
 	}
 
@@ -281,7 +291,7 @@ double r2l()
 	Mat lMask;
 	lMask.create(lGray.rows, lGray.cols, CV_8UC1);//CV_8UC1
 
-												  //init to 0;
+	//init to 0;
 	for (int i = 0; i < lGray.rows; i++) {
 		uchar* data = lMask.ptr<uchar>(i);//行指针;
 		for (int j = 0; j < lGray.cols; j++)
@@ -301,7 +311,7 @@ double r2l()
 	}
 
 	//显示左视点掩膜图;
-	//imshow("左视点掩膜图;", lMask);
+	imshow("左视点掩膜图;", lMask);
 	//写入左视点掩膜图;
 	imwrite("左视点掩膜图.png", lMask, compression_params);
 
@@ -309,12 +319,12 @@ double r2l()
 	//计算全局MSSIM值;
 	Scalar mssimV;
 	mssimV = getMSSIM(lGray, rwarpedGray);
-	printf("全局MMSIM = %.2lf\n", mssimV.val[0]);
+	printf("全局MMSIM = %.4lf\n", mssimV.val[0]);
 
 	//计算全局PSNR值;
 	double psnrV;
 	psnrV = getPSNR(lGray, rwarpedGray);
-	printf("全局PSNR = %.2lf dB\n", psnrV);
+	printf("全局PSNR = %.4lf dB\n", psnrV);
 
 	////////////////////////////////////////////////////
 
@@ -375,7 +385,7 @@ double r2l()
 	for (int i = 5; i < M - 5; i++) {
 		for (int j = 5; j < N - 5; j++) {
 			if (lMask_double[i][j] == 255.0) {//如果是关键区域点;
-											  //关键区域点数目+1;
+				//关键区域点数目+1;
 				sum_Num++;
 				//确定11*11窗口的起始点;
 				int l = i - 5;
@@ -389,16 +399,16 @@ double r2l()
 				//先计算uL和uL1;
 				for (int x = l; x < l + 11; x++) {
 					for (int y = c; y < c + 11; y++) {
-						uL += /*hlMask_double[x][y] **/ gaussWeight[x - l][y - c] * lGray_double[x][y];
-						uL1 += /*hlMask_double[x][y] **/ gaussWeight[x - l][y - c] * rwarpedGray_double[x][y];
+						uL +=  gaussWeight[x - l][y - c] * lGray_double[x][y];
+						uL1 +=  gaussWeight[x - l][y - c] * rwarpedGray_double[x][y];
 					}
 				}
 				//再计算oL^2,oL1^2和oLL1;
 				for (int x = l; x < l + 11; x++) {
 					for (int y = c; y < c + 11; y++) {
-						oL += /*hlMask_double[x][y] **/ gaussWeight[x - l][y - c] * pow((lGray_double[x][y] - uL), 2);//已经是平方了;
-						oL1 += /*hlMask_double[x][y] **/ gaussWeight[x - l][y - c] * pow((rwarpedGray_double[x][y] - uL1), 2);//已经是平方了;
-						oLL1 += /*hlMask_double[x][y] **/ gaussWeight[x - l][y - c] * (lGray_double[x][y] - uL)*(rwarpedGray_double[x][y] - uL1);//求和完成后不需要开平方;
+						oL +=  gaussWeight[x - l][y - c] * pow((lGray_double[x][y] - uL), 2);//已经是平方了;
+						oL1 +=  gaussWeight[x - l][y - c] * pow((rwarpedGray_double[x][y] - uL1), 2);//已经是平方了;
+						oLL1 +=  gaussWeight[x - l][y - c] * abs((lGray_double[x][y] - uL)*(rwarpedGray_double[x][y] - uL1));//求和完成后不需要开平方;
 					}
 				}
 
@@ -428,12 +438,13 @@ double r2l()
 
 	//CBAl计算;
 	double CBAl = sum_SSIM / sum_Num;
-	printf("CBAl = %.2lf\n", CBAl);
+	printf("CBAl = %.4lf\n", CBAl);
 
 	return CBAl;
+//return 1;
 }
 
-double l2r()
+double l2r(Mat& lColor, Mat& rColor, Mat& lDisp, Mat& rDisp)
 {
 	
 	printf("\n\n左视点到右视点的映射，CBAr的计算;\n");
@@ -444,11 +455,11 @@ double l2r()
 	compression_params.push_back(9);
 
 	//输入彩色图;
-	Mat lColor = imread("view1.png", 2 | 4);
-	Mat rColor = imread("view5.png", 2 | 4);
+	//Mat lColor = imread("Reindeer_Original_view1.bmp", 2 | 4);
+	//Mat rColor = imread("Reindeer_Original_view2.bmp", 2 | 4);
 	//输入视差图;
-	Mat lDisp = imread("disp1.png", 2 | 4);
-	Mat rDisp = imread("disp5.png", 2 | 4);
+	//Mat lDisp = imread("Reindeer_InterViewConsistency_depth_view1.bmp", 2 | 4);
+	//Mat rDisp = imread("Reindeer_InterViewConsistency_depth_view2.bmp", 2 | 4);
 
 	//申明新灰度图空间;
 	Mat lGray, rGray;
@@ -458,6 +469,16 @@ double l2r()
 	//测试输入彩色图(测试通过);
 	//imshow("原始左视点图;", lColor);
 	//imshow("原始右视点图;", rColor);
+
+	////原始深度图/5;
+	//for (int i = 0; i < lGray.rows; i++) {
+	//	uchar* data1 = lDisp.ptr<uchar>(i);//行指针;
+	//	uchar* data2 = rDisp.ptr<uchar>(i);//行指针;
+	//	for (int j = 0; j < lGray.cols; j++) {
+	//		data1[j] /= 5;
+	//		data2[j] /= 5;
+	//	}
+	//}
 
 	//测试输入视差图(测试通过);
 	//imshow("原始左视差图;", lDisp);
@@ -471,21 +492,21 @@ double l2r()
 	//imshow("左视点灰度图;", lGray);
 	//imshow("右视点灰度图;", rGray);
 
-	imwrite("左视点灰度图.png", lGray, compression_params);
-	imwrite("右视点灰度图.png", rGray, compression_params);
+	//imwrite("左视点灰度图.png", lGray, compression_params);
+	//imwrite("右视点灰度图.png", rGray, compression_params);
 
 	//将左视点灰度图通过视差图映射到右视点;
 	//申明映射的新右视点图空间;
 	Mat lwarpedGray;
 	lwarpedGray.create(lGray.rows, lGray.cols, CV_8UC1);//CV_8UC1
 
-														//z-buffer,打算先保存一个位置掩模;
-														//申明映射的新右视点图位置掩模;
+	//z-buffer,打算先保存一个位置掩模;
+	//申明映射的新右视点图位置掩模;
 	Mat lwarpedLocal, lwarpedLocal_Value;
 	lwarpedLocal.create(lGray.rows, lGray.cols, CV_16UC1);//CV_16UC1
 	lwarpedLocal_Value.create(lGray.rows, lGray.cols, CV_8UC1);//CV_8UC1
 
-															   //init to 0;
+	//init to 0;
 	for (int i = 0; i < lGray.rows; i++) {
 		ushort* data = lwarpedLocal.ptr<ushort>(i);//行指针;
 		for (int j = 0; j < lGray.cols; j++)
@@ -545,7 +566,7 @@ double l2r()
 	imwrite("映射的新右视点图.png", lwarpedGray, compression_params);
 
 	//显示映射的新右视点图;
-	//imshow("映射的新右视点图;", lwarpedGray);
+	imshow("映射的新右视点图;", lwarpedGray);
 
 	//接下来要统计Hl区域;
 	//统计左边的全0区域，则这些全0区域即为Hl;
@@ -582,7 +603,7 @@ double l2r()
 	Mat rDiff;
 	rDiff.create(lGray.rows, lGray.cols, CV_8UC1);//CV_8UC1
 
-												  //init to 0;
+	//init to 0;
 	for (int i = 0; i < lGray.rows; i++) {
 		uchar* data = rDiff.ptr<uchar>(i);//行指针;
 		for (int j = 0; j < lGray.cols; j++)
@@ -603,9 +624,9 @@ double l2r()
 	}
 
 	//显示右视点与左视点映射的右视点差异图;
-	//imshow("右视点与左视点映射的右视点差异图;", rDiff);
+	imshow("右视点与左视点映射的右视点差异图;", rDiff);
 
-	imwrite("右视点与左视点映射的右视点差异图.png", rDiff, compression_params);
+	//imwrite("右视点与左视点映射的右视点差异图.png", rDiff, compression_params);
 
 
 	//////////////////////////////////////////////////////////////////
@@ -614,7 +635,7 @@ double l2r()
 	Mat rThre;
 	rThre.create(lGray.rows, lGray.cols, CV_8UC1);//CV_8UC1
 
-												  //init to 0;
+	//init to 0;
 	for (int i = 0; i < lGray.rows; i++) {
 		uchar* data = rThre.ptr<uchar>(i);//行指针;
 		for (int j = 0; j < lGray.cols; j++)
@@ -627,7 +648,7 @@ double l2r()
 		uchar* data2 = rDiff.ptr<uchar>(i);
 		uchar* data3 = rThre.ptr<uchar>(i);
 		for (int j = 0; j < lGray.cols; j++) {
-			data3[j] = log(data1[j] * data2[j] + 1) * 5;//此处*5即/0.2;
+			data3[j] = log(data1[j] * data2[j] + 1) / 0.1;//此处*5即/0.2;////////////////////////////////////////////////////////////////////////////////////
 		}
 	}
 
@@ -640,7 +661,7 @@ double l2r()
 	Mat rMask;
 	rMask.create(lGray.rows, lGray.cols, CV_8UC1);//CV_8UC1
 
-												  //init to 0;
+	//init to 0;
 	for (int i = 0; i < lGray.rows; i++) {
 		uchar* data = rMask.ptr<uchar>(i);//行指针;
 		for (int j = 0; j < lGray.cols; j++)
@@ -660,20 +681,20 @@ double l2r()
 	}
 
 	//显示右视点掩膜图;
-	//imshow("右视点掩膜图;", rMask);
+	imshow("右视点掩膜图;", rMask);
 	//写入右视点掩膜图;
 	imwrite("右视点掩膜图.png", rMask, compression_params);
 
 	////////////////////////////////////////////////////
-	//计算全局MSSIM值;
+	//计算全局MSSIM值(注意此处是对rGray和lGray);
 	Scalar mssimV;
-	mssimV = getMSSIM(rGray, lwarpedGray);
-	printf("全局MMSIM = %.2lf\n", mssimV.val[0]);
+	mssimV = getMSSIM(rGray, lGray);
+	printf("全局MMSIM真 = %.4lf\n", mssimV.val[0]);
 
 	//计算全局PSNR值;
 	double psnrV;
-	psnrV = getPSNR(rGray, lwarpedGray);
-	printf("全局PSNR = %.2lf dB\n", psnrV);
+	psnrV = getPSNR(rGray, lGray);
+	printf("全局PSNR真 = %.4lf dB\n", psnrV);
 
 	////////////////////////////////////////////////////
 
@@ -734,7 +755,7 @@ double l2r()
 	for (int i = 5; i < M - 5; i++) {
 		for (int j = 5; j < N - 5; j++) {
 			if (rMask_double[i][j] == 255.0) {//如果是关键区域点;
-											  //关键区域点数目+1;
+				//关键区域点数目+1;
 				sum_Num++;
 				//确定11*11窗口的起始点;
 				int l = i - 5;
@@ -757,7 +778,7 @@ double l2r()
 					for (int y = c; y < c + 11; y++) {
 						oL += /*hlMask_double[x][y] **/ gaussWeight[x - l][y - c] * pow((rGray_double[x][y] - uL), 2);//已经是平方了;
 						oL1 += /*hlMask_double[x][y] **/ gaussWeight[x - l][y - c] * pow((lwarpedGray_double[x][y] - uL1), 2);//已经是平方了;
-						oLL1 += /*hlMask_double[x][y] **/ gaussWeight[x - l][y - c] * (rGray_double[x][y] - uL)*(lwarpedGray_double[x][y] - uL1);//求和完成后不需要开平方;
+						oLL1 += /*hlMask_double[x][y] **/ gaussWeight[x - l][y - c] * abs((rGray_double[x][y] - uL)*(lwarpedGray_double[x][y] - uL1));//求和完成后不需要开平方;
 					}
 				}
 
@@ -787,7 +808,7 @@ double l2r()
 
 	//CBAr计算;
 	double CBAr = sum_SSIM / sum_Num;
-	printf("CBAr = %.2lf\n", CBAr);
+	printf("CBAr = %.4lf\n", CBAr);
 
 	return CBAr;
 }
